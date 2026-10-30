@@ -1,0 +1,71 @@
+@host = https://localhost:7151
+@productId = 1
+@supplierId = 1
+
+### 1. Створити товар із залишком 10
+POST {{host}}/api/pure-cqrs-demo
+Content-Type: application/json
+
+{
+  "name": "Ноутбук",
+  "sku": "LAP-001",
+  "category": "Електроніка",
+  "description": "Навчальний приклад",
+  "price": 35000,
+  "stockQuantity": 10
+}
+
+### 2. Створити постачальника
+POST {{host}}/api/suppliers
+Content-Type: application/json
+
+{
+  "companyName": "ТОВ Електропостач",
+  "edrpouCode": "41234567",
+  "contactPerson": "Олена Коваль",
+  "phone": "+380671234567",
+  "email": "office@example.com",
+  "address": "Київ, вул. Складська, 1"
+}
+
+### 3. Поточний товар
+GET {{host}}/api/pure-cqrs-demo/{{productId}}
+
+### 4. Додати 25 одиниць: результат 35
+POST {{host}}/api/suppliers/restock
+Content-Type: application/json
+
+{
+  "supplierId": {{supplierId}},
+  "productId": {{productId}},
+  "quantity": 25,
+  "purchasePrice": 125.50,
+  "invoiceNumber": "INV-2026/09-44"
+}
+
+### 5. Перевірити історію
+GET {{host}}/api/stock-transactions?productId={{productId}}
+
+### Пошук за SKU та наявністю
+GET {{host}}/api/pure-cqrs-demo?searchTerm=lap&onlyInStock=true
+
+### Пошук постачальника за ЄДРПОУ
+GET {{host}}/api/suppliers?searchTerm=41234567
+
+### Усі постачальники, включно з неактивними
+GET {{host}}/api/suppliers?onlyActive=false
+
+### Ручна зміна залишку
+PATCH {{host}}/api/pure-cqrs-demo/{{productId}}/stock
+Content-Type: application/json
+
+{ "quantityChange": -5, "reason": "Відвантаження клієнту" }
+
+### Недостатньо товару → 400
+PATCH {{host}}/api/pure-cqrs-demo/{{productId}}/stock
+Content-Type: application/json
+
+{ "quantityChange": -10000, "reason": "Перевірка відмови" }
+
+### Видалити товар після перевірки історії
+DELETE {{host}}/api/pure-cqrs-demo/{{productId}}
